@@ -26,7 +26,7 @@ def tokenize(source_code: str) -> list[str]:
         current_token = re.match(integer_regrex, source_code[i:])
         if current_token:
             loc = Location(row, column)
-            token = Token(current_token.group(), "integer", loc)
+            token = Token(current_token.group(), "int_literal", loc)
             tokens.append(token)
             i += len(current_token.group())
             column += len(current_token.group())
