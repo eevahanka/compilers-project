@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from .token_location import Location
 
 @dataclass
 class Expression:
     """Base class for AST nodes representing expressions."""
+    location: Location
 
 @dataclass
 class Literal(Expression):
@@ -18,3 +20,9 @@ class BinaryOp(Expression):
     left: Expression
     op: str
     right: Expression
+
+@dataclass
+class IfExpression(Expression):
+    condition: Expression
+    then_branch: Expression
+    else_branch: Expression | None

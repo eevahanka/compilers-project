@@ -43,13 +43,13 @@ def parse(tokens: list[Token]) -> ast.Expression:
         if peek().type != 'int_literal':
             raise Exception(f'{peek().location}: expected an integer literal')
         token = consume()
-        return ast.Literal(int(token.text))
+        return ast.Literal(int(token.text), token.location)
 
     def parse_identifier() -> ast.Identifier:
         if peek().type != 'identifier':
             raise Exception(f'{peek().location}: expected an identifier')
         token = consume()
-        return ast.Identifier(token.text)
+        return ast.Identifier(token.location, token.text)
 
     def parse_term() -> ast.Expression:
     # Same structure as in 'parse_expression',
@@ -60,6 +60,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             operator = operator_token.text
             right = parse_factor()
             left = ast.BinaryOp(
+                operator_token.location,
                 left,
                 operator,
                 right
@@ -69,12 +70,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_factor() -> ast.Expression:
         if peek().text == '(':
             return parse_parenthesized()
+        elif peek().text == 'if':
+            return parse_if_expression()
         elif peek().type == 'int_literal':
             return parse_int_literal()
         elif peek().type == 'identifier':
             return parse_identifier()
         else:
-            raise Exception(f'{peek().location}: expected "(", an integer literal or an identifier')
+            raise Exception(f'{peek().location}: expected "(", "if", an integer literal or an identifier')
 
     def parse_parenthesized() -> ast.Expression:
         consume('(')
@@ -84,6 +87,19 @@ def parse(tokens: list[Token]) -> ast.Expression:
         consume(')')
         return expr
 
+    def parse_if_expression() -> ast.Expression:
+        consume('if')
+        condition = parse_expression()
+        consume('then')
+        then_branch = parse_expression()
+        
+        # Check for optional else branch
+        else_branch = None
+        if peek().text == 'else':
+            consume('else')
+            else_branch = parse_expression()
+        
+        return ast.IfExpression(condition.location, condition, then_branch, else_branch)
 
     def parse_expression() -> ast.Expression:
         left = parse_term()
@@ -100,6 +116,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
             # Combine it with the stuff we've
             # accumulated on the left so far.
             left = ast.BinaryOp(
+                operator_token.location,
                 left,
                 operator,
                 right
