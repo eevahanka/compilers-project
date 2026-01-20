@@ -85,8 +85,49 @@ def parse(tokens: list[Token]) -> ast.Expression:
         
         return ast.IfExpression(condition.location, condition, then_branch, else_branch)
 
+    def parse_block() -> ast.Block:
+        """Parse a block: { statement; statement; ... }"""
+        block_location = peek().location
+        consume('{')
+        statements: list[ast.Expression] = []
+        
+        while peek().text != '}':
+            statements.append(parse_statement())
+            # Optional semicolon after each statement
+            if peek().text == ';':
+                consume(';')
+        
+        consume('}')
+        return ast.Block(block_location, statements)
+
+    def parse_statement() -> ast.Expression:
+        """Parse a statement, which can be a variable declaration or an expression."""
+        if peek().text == 'var':
+            return parse_variable_declaration()
+        else:
+            return parse_assignment()
+
+    def parse_variable_declaration() -> ast.VariableDeclaration:
+        """Parse a variable declaration: var name = value"""
+        var_location = peek().location
+        consume('var')
+        
+        # Get the variable name
+        if peek().type != 'identifier':
+            raise Exception(f'{peek().location}: expected an identifier after "var"')
+        name_token = consume()
+        variable_name = name_token.text
+        
+        # Expect '='
+        consume('=')
+        
+        # Parse the value expression
+        value = parse_assignment()
+        
+        return ast.VariableDeclaration(var_location, variable_name, value)
+
     def parse_atom() -> ast.Expression:
-        """Parse atomic expressions: literals, identifiers, if, parentheses, unary ops."""
+        """Parse atomic expressions: literals, identifiers, if, parentheses, unary ops, blocks."""
         # Handle unary operators: - and not
         if peek().text in ['-', 'not']:
             operator_token = consume()
@@ -96,6 +137,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
         
         if peek().text == '(':
             return parse_parenthesized()
+        elif peek().text == '{':
+            return parse_block()
         elif peek().text == 'if':
             return parse_if_expression()
         elif peek().type == 'int_literal':
@@ -107,7 +150,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
                 return parse_function_call(identifier)
             return identifier
         else:
-            raise Exception(f'{peek().location}: expected "(", "if", an integer literal, an identifier, or a unary operator')
+            raise Exception(f'{peek().location}: expected "(", "if", an integer literal, an identifier, a block, or a unary operator')
 
     left_associative_binary_operators = [
         ['='], # right-associative!!

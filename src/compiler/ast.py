@@ -36,3 +36,12 @@ class IfExpression(Expression):
 class FunctionCall(Expression):
     function: Expression
     arguments: list[Expression]
+
+@dataclass
+class VariableDeclaration(Expression):
+    name: str
+    value: Expression
+
+@dataclass
+class Block(Expression):
+    statements: list[Expression]

@@ -194,3 +194,103 @@ def test_parser_unary():
     tokens = tokenize('-2')
     excpected = ast.UnaryOp(L, '-', ast.Literal(L, 2))
     assert parse(tokens) == excpected
+
+def test_variable_declaration_simple():
+    tokens = tokenize('{ var x = 123 }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.VariableDeclaration(L, 'x', ast.Literal(L, 123))
+        ]
+    )
+    assert result == expected
+
+def test_variable_declaration_with_expression():
+    tokens = tokenize('{ var x = 1 + 2 }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.VariableDeclaration(
+                L,
+                'x',
+                ast.BinaryOp(L, ast.Literal(L, 1), '+', ast.Literal(L, 2))
+            )
+        ]
+    )
+    assert result == expected
+
+def test_multiple_variable_declarations():
+    tokens = tokenize('{ var x = 1; var y = 2 }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.VariableDeclaration(L, 'x', ast.Literal(L, 1)),
+            ast.VariableDeclaration(L, 'y', ast.Literal(L, 2))
+        ]
+    )
+    assert result == expected
+
+def test_block_with_expressions():
+    tokens = tokenize('{ 1 + 2; x }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.BinaryOp(L, ast.Literal(L, 1), '+', ast.Literal(L, 2)),
+            ast.Identifier(L, 'x')
+        ]
+    )
+    assert result == expected
+
+def test_variable_declaration_and_expression():
+    tokens = tokenize('{ var x = 5; x + 1 }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.VariableDeclaration(L, 'x', ast.Literal(L, 5)),
+            ast.BinaryOp(L, ast.Identifier(L, 'x'), '+', ast.Literal(L, 1))
+        ]
+    )
+    assert result == expected
+
+def test_block_as_expression_in_binary_op():
+    tokens = tokenize('{ var x = 1 } + 2')
+    result = parse(tokens)
+    expected = ast.BinaryOp(
+        L,
+        left=ast.Block(
+            L,
+            statements=[
+                ast.VariableDeclaration(L, 'x', ast.Literal(L, 1))
+            ]
+        ),
+        op='+',
+        right=ast.Literal(L, 2)
+    )
+    assert result == expected
+
+def test_nested_blocks():
+    tokens = tokenize('{ { var x = 1 } }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.Block(
+                L,
+                statements=[
+                    ast.VariableDeclaration(L, 'x', ast.Literal(L, 1))
+                ]
+            )
+        ]
+    )
+    assert result == expected
+
+def test_empty_block():
+    tokens = tokenize('{ }')
+    result = parse(tokens)
+    expected = ast.Block(L, statements=[])
+    assert result == expected
