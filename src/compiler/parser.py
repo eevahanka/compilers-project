@@ -221,3 +221,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
     if peek().type != 'end':
         raise Exception(f'{peek().location}: unexpected token "{peek().text}"')
     return parsed
+
+#puuttuu Parentheses: (E), used to override precedence.
+#ja while do
+# i think toine näist puuttuu Untyped variable declaration: var ID = E where ID is an identifier.
+# Typed variable declaration: var ID: T = E where ID is an identifier and T is Int, Bool or Unit.
