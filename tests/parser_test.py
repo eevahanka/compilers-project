@@ -294,3 +294,128 @@ def test_empty_block():
     result = parse(tokens)
     expected = ast.Block(L, statements=[])
     assert result == expected
+
+def test_consecutive_blocks_allowed():
+    """{ { a } { b } } should be allowed"""
+    tokens = tokenize('{ { a } { b } }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.Block(L, statements=[ast.Identifier(L, 'a')]),
+            ast.Block(L, statements=[ast.Identifier(L, 'b')])
+        ]
+    )
+    assert result == expected
+
+def test_consecutive_simple_expressions_not_allowed():
+    """{ a b } should NOT be allowed"""
+    tokens = tokenize('{ a b }')
+    with pytest.raises(Exception, match='expected ";"'):
+        parse(tokens)
+
+def test_if_then_block_with_expression_allowed():
+    """{ if true then { a } b } should be allowed"""
+    tokens = tokenize('{ if true then { a } b }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.IfExpression(
+                L,
+                condition=ast.Identifier(L, 'true'),
+                then_branch=ast.Block(L, statements=[ast.Identifier(L, 'a')]),
+                else_branch=None
+            ),
+            ast.Identifier(L, 'b')
+        ]
+    )
+    assert result == expected
+
+def test_if_then_block_with_expression_and_semicolon_allowed():
+    """{ if true then { a }; b } should be allowed"""
+    tokens = tokenize('{ if true then { a }; b }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.IfExpression(
+                L,
+                condition=ast.Identifier(L, 'true'),
+                then_branch=ast.Block(L, statements=[ast.Identifier(L, 'a')]),
+                else_branch=None
+            ),
+            ast.Identifier(L, 'b')
+        ]
+    )
+    assert result == expected
+
+def test_if_then_two_expressions_not_allowed():
+    """{ if true then { a } b c } should NOT be allowed"""
+    tokens = tokenize('{ if true then { a } b c }')
+    with pytest.raises(Exception, match='expected ";"'):
+        parse(tokens)
+
+def test_if_then_expression_semicolon_expression_allowed():
+    """{ if true then { a } b; c } should be allowed"""
+    tokens = tokenize('{ if true then { a } b; c }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.IfExpression(
+                L,
+                condition=ast.Identifier(L, 'true'),
+                then_branch=ast.Block(L, statements=[ast.Identifier(L, 'a')]),
+                else_branch=None
+            ),
+            ast.Identifier(L, 'b'),
+            ast.Identifier(L, 'c')
+        ]
+    )
+    assert result == expected
+
+def test_if_then_else_block_with_expression_allowed():
+    """{ if true then { a } else { b } c } should be allowed"""
+    tokens = tokenize('{ if true then { a } else { b } c }')
+    result = parse(tokens)
+    expected = ast.Block(
+        L,
+        statements=[
+            ast.IfExpression(
+                L,
+                condition=ast.Identifier(L, 'true'),
+                then_branch=ast.Block(L, statements=[ast.Identifier(L, 'a')]),
+                else_branch=ast.Block(L, statements=[ast.Identifier(L, 'b')])
+            ),
+            ast.Identifier(L, 'c')
+        ]
+    )
+    assert result == expected
+
+def test_assignment_with_consecutive_blocks_allowed():
+    """x = { { f(a) } { b } } should be allowed"""
+    tokens = tokenize('x = { { f(a) } { b } }')
+    result = parse(tokens)
+    expected = ast.BinaryOp(
+        L,
+        left=ast.Identifier(L, 'x'),
+        op='=',
+        right=ast.Block(
+            L,
+            statements=[
+                ast.Block(
+                    L,
+                    statements=[
+                        ast.FunctionCall(
+                            L,
+                            function=ast.Identifier(L, 'f'),
+                            arguments=[ast.Identifier(L, 'a')]
+                        )
+                    ]
+                ),
+                ast.Block(L, statements=[ast.Identifier(L, 'b')])
+            ]
+        )
+    )
+    assert result == expected

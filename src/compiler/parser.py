@@ -91,11 +91,31 @@ def parse(tokens: list[Token]) -> ast.Expression:
         consume('{')
         statements: list[ast.Expression] = []
         
+        last_was_compound = True  
+        
         while peek().text != '}':
-            statements.append(parse_statement())
-            # Optional semicolon after each statement
+            stmt = parse_statement()
+            statements.append(stmt)
+            is_compound = isinstance(stmt, (
+                ast.IfExpression,
+                ast.Block,
+                ast.FunctionCall,
+                ast.VariableDeclaration
+            ))
+            
+            # Handle what comes next
             if peek().text == ';':
                 consume(';')
+                last_was_compound = True  
+            elif peek().text != '}':
+                if not is_compound:
+                    raise Exception(
+                        f'{peek().location}: expected ";" before this statement '
+                        f'(previous statement was not compound)'
+                    )
+                last_was_compound = is_compound
+            else:
+                last_was_compound = is_compound
         
         consume('}')
         return ast.Block(block_location, statements)
@@ -112,23 +132,19 @@ def parse(tokens: list[Token]) -> ast.Expression:
         var_location = peek().location
         consume('var')
         
-        # Get the variable name
         if peek().type != 'identifier':
             raise Exception(f'{peek().location}: expected an identifier after "var"')
         name_token = consume()
         variable_name = name_token.text
         
-        # Expect '='
         consume('=')
         
-        # Parse the value expression
         value = parse_assignment()
         
         return ast.VariableDeclaration(var_location, variable_name, value)
 
     def parse_atom() -> ast.Expression:
         """Parse atomic expressions: literals, identifiers, if, parentheses, unary ops, blocks."""
-        # Handle unary operators: - and not
         if peek().text in ['-', 'not']:
             operator_token = consume()
             operator = operator_token.text
