@@ -180,3 +180,17 @@ def test_nested_function_calls():
     )
     assert result == expected
 
+def test_parcer_equals():
+    tokens = tokenize('x=2')
+    expected = ast.BinaryOp(L, ast.Identifier(L, 'x'), '=', ast.Literal(L, 2))
+    assert parse(tokens) == expected
+
+def test_parser_lt():
+    tokens = tokenize('x <= 2')
+    excpected = ast.BinaryOp(L, ast.Identifier(L, 'x'), '<=', ast.Literal(L, 2))
+    assert parse(tokens) == excpected
+
+def test_parser_unary():
+    tokens = tokenize('-2')
+    excpected = ast.UnaryOp(L, '-', ast.Literal(L, 2))
+    assert parse(tokens) == excpected

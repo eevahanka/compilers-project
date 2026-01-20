@@ -22,6 +22,11 @@ class BinaryOp(Expression):
     right: Expression
 
 @dataclass
+class UnaryOp(Expression):
+    op: str
+    operand: Expression
+
+@dataclass
 class IfExpression(Expression):
     condition: Expression
     then_branch: Expression

@@ -12,8 +12,6 @@ class Location:
         self.dummy = dummy
 
     def __eq__(self, value):
-        # if type(value) != Location:
-        #     return self == value.location
         if self.row == value.row and self.column == value.column:
             return True
         elif self.dummy or value.dummy:

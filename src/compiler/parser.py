@@ -46,7 +46,7 @@ def parse(tokens: list[Token]) -> ast.Expression:
         return ast.Literal(token.location, int(token.text))
 
     def parse_identifier() -> ast.Identifier:
-        if peek().type != 'identifier':
+        if peek().type !='identifier':
             raise Exception(f'{peek().location}: expected an identifier')
         token = consume()
         return ast.Identifier(token.location, token.text)
@@ -55,92 +55,110 @@ def parse(tokens: list[Token]) -> ast.Expression:
         consume('(')
         arguments: list[ast.Expression] = []
         if peek().text != ')':
-            arguments.append(parse_expression())
+            arguments.append(parse_assignment())
             while peek().text == ',':
                 consume(',')
-                arguments.append(parse_expression())
+                arguments.append(parse_assignment())
         
         consume(')')
         return ast.FunctionCall(function.location, function, arguments)
 
-    def parse_term() -> ast.Expression:
-    # Same structure as in 'parse_expression',
-    # but the operators and function calls differ.
-        left = parse_factor()
-        while peek().text in ['*', '/']:
+    def parse_parenthesized() -> ast.Expression:
+        consume('(')
+        # Recursively call the top level pars function
+        #  pars inside parentheses.
+        expr = parse_assignment()
+        consume(')')
+        return expr
+
+    def parse_if_expression() -> ast.Expression:
+        consume('if')
+        condition = parse_assignment()
+        consume('then')
+        then_branch = parse_assignment()
+        
+        # optional else branch
+        else_branch = None
+        if peek().text == 'else':
+            consume('else')
+            else_branch = parse_assignment()
+        
+        return ast.IfExpression(condition.location, condition, then_branch, else_branch)
+
+    def parse_atom() -> ast.Expression:
+        """Parse atomic expressions: literals, identifiers, if, parentheses, unary ops."""
+        # Handle unary operators: - and not
+        if peek().text in ['-', 'not']:
             operator_token = consume()
             operator = operator_token.text
-            right = parse_factor()
-            left = ast.BinaryOp(
-                operator_token.location,
-                left,
-                operator,
-                right
-            )
-        return left
-
-    def parse_factor() -> ast.Expression:
+            operand = parse_atom()  # Right-associative for unary operators
+            return ast.UnaryOp(operator_token.location, operator, operand)
+        
         if peek().text == '(':
             return parse_parenthesized()
         elif peek().text == 'if':
             return parse_if_expression()
         elif peek().type == 'int_literal':
             return parse_int_literal()
-        elif peek().type == 'identifier':
+        elif peek().type ==  'identifier':
             identifier = parse_identifier()
             #function call
             if peek().text == '(':
                 return parse_function_call(identifier)
             return identifier
         else:
-            raise Exception(f'{peek().location}: expected "(", "if", an integer literal or an identifier')
+            raise Exception(f'{peek().location}: expected "(", "if", an integer literal, an identifier, or a unary operator')
 
-    def parse_parenthesized() -> ast.Expression:
-        consume('(')
-        # Recursively call the top level parsing function
-        # to parse whatever is inside the parentheses.
-        expr = parse_expression()
-        consume(')')
-        return expr
+    left_associative_binary_operators = [
+        ['='], # right-associative!!
+        ['or'],
+        ['and'],
+        ['==', '!='],
+        ['<', '<=', '>', '>='],
+        ['+', '-'],
+        ['*', '/', '%'],
+    ]
 
-    def parse_if_expression() -> ast.Expression:
-        consume('if')
-        condition = parse_expression()
-        consume('then')
-        then_branch = parse_expression()
+    def parse_binary_op_level(level: int) -> ast.Expression:
+        if level >= len(left_associative_binary_operators):
+            return parse_atom()
         
-        # Check for optional else branch
-        else_branch = None
-        if peek().text == 'else':
-            consume('else')
-            else_branch = parse_expression()
+        left = parse_binary_op_level(level + 1)
         
-        return ast.IfExpression(condition.location, condition, then_branch, else_branch)
-
-    def parse_expression() -> ast.Expression:
-        left = parse_term()
-
-        # While there are more `+` or '-'...
-        while peek().text in ['+', '-']:
-            # Move past the '+' or '-'.
-            operator_token = consume()
-            operator = operator_token.text
-
-            # Parse the operator on the right.
-            right = parse_term()
-
-            # Combine it with the stuff we've
-            # accumulated on the left so far.
-            left = ast.BinaryOp(
-                operator_token.location,
-                left,
-                operator,
-                right
-            )
+        operators_at_this_level = left_associative_binary_operators[level]
+        
+        #right-associative =
+        if operators_at_this_level == ['=']:
+            while peek().text == '=':
+                operator_token = consume()
+                operator = operator_token.text
+                right = parse_binary_op_level(level)
+                left = ast.BinaryOp(
+                    operator_token.location,
+                    left,
+                    operator,
+                    right
+                )
+        else:
+            # left-associative operators
+            while peek().text in operators_at_this_level:
+                operator_token = consume()
+                operator = operator_token.text
+                right = parse_binary_op_level(level + 1)
+                left = ast.BinaryOp(
+                    operator_token.location,
+                    left,
+                    operator,
+                    right
+                )
+        
         return left
 
+    def parse_assignment() -> ast.Expression:
+        """Entry point for expression parsing."""
+        return parse_binary_op_level(0)
 
-    parsed = parse_expression()
+    parsed = parse_assignment()
     if peek().type != 'end':
         raise Exception(f'{peek().location}: unexpected token "{peek().text}"')
     return parsed
