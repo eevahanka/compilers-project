@@ -3,14 +3,15 @@ from compiler.tokenizer import tokenize
 import compiler.ast as ast
 import pytest
 from compiler.token_location import Location
+from compiler.token import Token
 
 L = Location(3,2,True) #dummy location
 
 def test_parser():
     tokens = tokenize("2+3")
     print(parse(tokens))
-    lit2 = ast.Literal(2, L)
-    lit3 = ast.Literal(3, L)
+    lit2 = ast.Literal(L, 2)
+    lit3 = ast.Literal(L, 3)
     ast1 = ast.BinaryOp(L, lit2, '+', lit3)
     assert(parse(tokens) == ast1)
 
@@ -54,13 +55,13 @@ def test_parcer_if_part_of_another_expression():
     tokens = tokenize('1 + if true then 2 else 3')
     expected = ast.BinaryOp(
         location=L,
-        left=ast.Literal(1, L),
+        left=ast.Literal(L, 1),
         op='+',
         right=ast.IfExpression(
             location=L,
             condition=ast.Identifier(L, 'true'),
-            then_branch=ast.Literal(2, L),
-            else_branch=ast.Literal(3, L),
+            then_branch=ast.Literal(L, 2),
+            else_branch=ast.Literal(L, 3),
         )
     )
     assert(parse(tokens) == expected)
@@ -73,9 +74,109 @@ def test_parcer_nested_if():
         then_branch=ast.IfExpression(
             L,
             condition=ast.Identifier(L, 'b'),
-            then_branch=ast.Literal(1, L),
-            else_branch=ast.Literal(2, L)
+            then_branch=ast.Literal(L, 1),
+            else_branch=ast.Literal(L, 2)
         ),
-        else_branch=ast.Literal(3, L)
+        else_branch=ast.Literal(L, 3)
     )
     assert(parse(tokens) == expected)
+
+def test_parcer_locations():
+    token1 = Token('print_int', 'identifier', Location(6,1))
+    token2 = Token('(', 'punctuation', Location(6,10))
+    token3 = Token('123', 'int_literal', Location(6,11))
+    token4 = Token(')', 'punctuation', Location(6,14))
+    tokens = [token1, token2, token3, token4]
+    expected = ast.FunctionCall(Location(6,1), ast.Identifier(Location(6,1), 'print_int'), [ast.Literal(Location(6,11), 123)])
+    assert (parse(tokenize('/*\nMany lines\nof comment\ntext.\n*/\nprint_int(123)\n/* Another\ncomment. */')) == expected)
+
+def test_function_call_single_arg():
+    tokens = tokenize('f(x)')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[ast.Identifier(L, 'x')]
+    )
+    assert result == expected
+
+def test_function_call_multiple_args():
+    tokens = tokenize('f(x, y)')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[
+            ast.Identifier(L, 'x'),
+            ast.Identifier(L, 'y')
+        ]
+    )
+    assert result == expected
+
+def test_function_call_with_expression():
+    tokens = tokenize('f(x, y + z)')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[
+            ast.Identifier(L, 'x'),
+            ast.BinaryOp(L, ast.Identifier(L, 'y'), '+', ast.Identifier(L, 'z'))
+        ]
+    )
+    assert result == expected
+
+def test_function_call_no_args():
+    tokens = tokenize('f()')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[]
+    )
+    assert result == expected
+
+def test_function_call_complex_args():
+    tokens = tokenize('f(a * b, c + d)')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[
+            ast.BinaryOp(L, ast.Identifier(L, 'a'), '*', ast.Identifier(L, 'b')),
+            ast.BinaryOp(L, ast.Identifier(L, 'c'), '+', ast.Identifier(L, 'd'))
+        ]
+    )
+    assert result == expected
+
+def test_function_call_in_expression():
+    tokens = tokenize('f(x) + 2')
+    result = parse(tokens)
+    expected = ast.BinaryOp(
+        L,
+        left=ast.FunctionCall(
+            L,
+            function=ast.Identifier(L, 'f'),
+            arguments=[ast.Identifier(L, 'x')]
+        ),
+        op='+',
+        right=ast.Literal(L, 2)
+    )
+    assert result == expected
+
+def test_nested_function_calls():
+    tokens = tokenize('f(g(x))')
+    result = parse(tokens)
+    expected = ast.FunctionCall(
+        L,
+        function=ast.Identifier(L, 'f'),
+        arguments=[
+            ast.FunctionCall(
+                L,
+                function=ast.Identifier(L, 'g'),
+                arguments=[ast.Identifier(L, 'x')]
+            )
+        ]
+    )
+    assert result == expected
+

@@ -26,3 +26,8 @@ class IfExpression(Expression):
     condition: Expression
     then_branch: Expression
     else_branch: Expression | None
+
+@dataclass
+class FunctionCall(Expression):
+    function: Expression
+    arguments: list[Expression]

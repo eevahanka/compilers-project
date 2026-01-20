@@ -43,13 +43,25 @@ def parse(tokens: list[Token]) -> ast.Expression:
         if peek().type != 'int_literal':
             raise Exception(f'{peek().location}: expected an integer literal')
         token = consume()
-        return ast.Literal(int(token.text), token.location)
+        return ast.Literal(token.location, int(token.text))
 
     def parse_identifier() -> ast.Identifier:
         if peek().type != 'identifier':
             raise Exception(f'{peek().location}: expected an identifier')
         token = consume()
         return ast.Identifier(token.location, token.text)
+
+    def parse_function_call(function: ast.Identifier) -> ast.FunctionCall:
+        consume('(')
+        arguments: list[ast.Expression] = []
+        if peek().text != ')':
+            arguments.append(parse_expression())
+            while peek().text == ',':
+                consume(',')
+                arguments.append(parse_expression())
+        
+        consume(')')
+        return ast.FunctionCall(function.location, function, arguments)
 
     def parse_term() -> ast.Expression:
     # Same structure as in 'parse_expression',
@@ -75,7 +87,11 @@ def parse(tokens: list[Token]) -> ast.Expression:
         elif peek().type == 'int_literal':
             return parse_int_literal()
         elif peek().type == 'identifier':
-            return parse_identifier()
+            identifier = parse_identifier()
+            #function call
+            if peek().text == '(':
+                return parse_function_call(identifier)
+            return identifier
         else:
             raise Exception(f'{peek().location}: expected "(", "if", an integer literal or an identifier')
 
