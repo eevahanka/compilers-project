@@ -44,6 +44,17 @@ def parse(tokens: list[Token]) -> ast.Expression:
             raise Exception(f'{peek().location}: expected an integer literal')
         token = consume()
         return ast.Literal(token.location, int(token.text))
+    
+    def parse_bool_literal():
+        if peek().type != 'bool_literal':
+            raise Exception(f'{peek().location}: expected an bool literal')
+        token = consume()
+        if token.text == 'False':
+            return ast.Literal(token.location, False)
+        elif token.text == 'True':
+            return ast.Literal(token.location, True)
+        else:
+            raise Exception(f'{peek().location}: expected an bool literal (either True or False)')
 
     def parse_identifier() -> ast.Identifier:
         if peek().type !='identifier':
@@ -159,6 +170,8 @@ def parse(tokens: list[Token]) -> ast.Expression:
             return parse_if_expression()
         elif peek().type == 'int_literal':
             return parse_int_literal()
+        elif peek().type == 'bool_literal':
+            return parse_bool_literal()
         elif peek().type ==  'identifier':
             identifier = parse_identifier()
             #function call
@@ -192,10 +205,14 @@ def parse(tokens: list[Token]) -> ast.Expression:
                 operator_token = consume()
                 operator = operator_token.text
                 right = parse_binary_op_level(level)
-                left = ast.BinaryOp(
+                # Extract the variable name from the left Identifier
+                if isinstance(left, ast.Identifier):
+                    variable_name = left.name
+                else:
+                    raise Exception(f'{operator_token.location}: left side of assignment must be an identifier')
+                left = ast.VariableDeclaration(
                     operator_token.location,
-                    left,
-                    operator,
+                    variable_name,
                     right
                 )
         else:
@@ -216,7 +233,6 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_assignment() -> ast.Expression:
         """Entry point for expression parsing."""
         return parse_binary_op_level(0)
-
     parsed = parse_assignment()
     if peek().type != 'end':
         raise Exception(f'{peek().location}: unexpected token "{peek().text}"')

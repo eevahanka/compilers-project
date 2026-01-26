@@ -9,7 +9,7 @@ L = Location(3,2,True) #dummy location
 
 def test_parser():
     tokens = tokenize("2+3")
-    print(parse(tokens))
+    parse(tokens)
     lit2 = ast.Literal(L, 2)
     lit3 = ast.Literal(L, 3)
     ast1 = ast.BinaryOp(L, lit2, '+', lit3)
@@ -182,7 +182,7 @@ def test_nested_function_calls():
 
 def test_parcer_equals():
     tokens = tokenize('x=2')
-    expected = ast.BinaryOp(L, ast.Identifier(L, 'x'), '=', ast.Literal(L, 2))
+    expected = ast.VariableDeclaration(L, 'x', ast.Literal(L, 2))
     assert parse(tokens) == expected
 
 def test_parser_lt():
@@ -397,11 +397,10 @@ def test_assignment_with_consecutive_blocks_allowed():
     """x = { { f(a) } { b } } should be allowed"""
     tokens = tokenize('x = { { f(a) } { b } }')
     result = parse(tokens)
-    expected = ast.BinaryOp(
+    expected = ast.VariableDeclaration(
         L,
-        left=ast.Identifier(L, 'x'),
-        op='=',
-        right=ast.Block(
+        'x',
+        ast.Block(
             L,
             statements=[
                 ast.Block(
@@ -419,3 +418,11 @@ def test_assignment_with_consecutive_blocks_allowed():
         )
     )
     assert result == expected
+
+def test_parser_true():
+    tokens = tokenize('True')
+    assert(parse(tokens) == ast.Literal(L, True))
+
+def test_parser_false():
+    tokens = tokenize('False')
+    assert(parse(tokens) == ast.Literal(L, False))    

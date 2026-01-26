@@ -5,6 +5,7 @@ from .token_location import Location
 def tokenize(source_code: str) -> list[str]:
     identifier_regrex = r'[a-zA-Z_][a-zA-Z_0-9]*'
     integer_regrex = r'[0-9]+'
+    bool_literal = r'(True)|(False)'
     operator_regrex = r'==|!=|<=|>=|[+\-*/%=<>]'
     punctuation_regrex = r'[(){},;]'
     whitespace_regrex = r'\s+'
@@ -15,6 +16,14 @@ def tokenize(source_code: str) -> list[str]:
     row = 1
     column = 1
     while i < len(source_code):
+        current_token = re.match(bool_literal, source_code[i:])
+        if current_token:
+            loc = Location(row, column)
+            token = Token(current_token.group(), "bool_literal", loc)
+            tokens.append(token)
+            i += len(current_token.group())
+            column += len(current_token.group())
+            continue
         current_token = re.match(identifier_regrex, source_code[i:])
         if current_token:
             loc = Location(row, column)
@@ -86,3 +95,4 @@ def tokenize(source_code: str) -> list[str]:
     
     
 
+"pytest path/to/test_file.py::test_function_name"
