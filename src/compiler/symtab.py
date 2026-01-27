@@ -34,10 +34,15 @@ class SymTab:
     
     def set(self, name: str, value: Value) -> None:
         """Set a variable in the scope where it's defined."""
+        
         if name in self.symbols:
             self.symbols[name] = value
         elif self.parent is not None:
-            self.parent.set(name, value)
+            try:
+                self.parent.set(name, value)
+            except:
+                self.parent.set(name, value)
+
         else:
             raise NameError(f"Undefined variable: {name}")
     

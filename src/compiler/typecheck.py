@@ -22,11 +22,11 @@ def typecheck(node: ast.Expression, symtab: TypeSymTab | None = None) -> Type:
     """Typecheck an AST node and return its type."""
     if symtab is None:
         symtab = create_global_type_symtab()
-    
+    print(node)
     match node:
         case ast.BinaryOp():
-            t1 = typecheck(node.left)
-            t2 = typecheck(node.right)
+            t1 = typecheck(node.left, symtab) 
+            t2 = typecheck(node.right, symtab)
             print(t1)
             print(t2)
             if node.op in ['+', '-', '*', '/', '%']:
@@ -107,6 +107,14 @@ def typecheck(node: ast.Expression, symtab: TypeSymTab | None = None) -> Type:
         
         case ast.FunctionCall():
             ...
+
+        case ast.Assignment():
+            value = node.value
+            variable_type = typecheck(node.name, symtab)
+            value_type = typecheck(node.value, symtab)
+            if variable_type != value_type:
+                raise Exception(f'{node.location}: the assigned value ({value_type}) must have the same type as the variable ({variable_type}) ')
+            return variable_type
 
         case _:
             raise Exception(f'{node.location}: unknown node type: {type(node)}')

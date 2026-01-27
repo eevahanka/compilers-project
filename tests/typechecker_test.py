@@ -28,3 +28,8 @@ def test_typecheck_and():
     tokens = tokenize('True and True')
     parsed = parse(tokens)
     assert(typecheck(parsed) == Type('Bool'))
+
+def test_typecheck_assigmenr():
+    tokens = tokenize('{var x = 1;x = 2}')
+    parsed = parse(tokens)
+    assert(typecheck(parsed) == Type('Int'))

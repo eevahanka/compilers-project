@@ -45,3 +45,8 @@ class VariableDeclaration(Expression):
 @dataclass
 class Block(Expression):
     statements: list[Expression]
+
+@dataclass
+class Assignment(Expression):
+    name: Identifier
+    value: Expression

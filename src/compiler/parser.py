@@ -210,9 +210,9 @@ def parse(tokens: list[Token]) -> ast.Expression:
                     variable_name = left.name
                 else:
                     raise Exception(f'{operator_token.location}: left side of assignment must be an identifier')
-                left = ast.VariableDeclaration(
+                left = ast.Assignment(
                     operator_token.location,
-                    variable_name,
+                    left,
                     right
                 )
         else:

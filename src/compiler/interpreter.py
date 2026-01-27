@@ -66,5 +66,10 @@ def interpret(node: ast.Expression, symtab: SymTab | None = None) -> Value:
                 result = interpret(statement, child_symtab)
             return result
         
+        case ast.Assignment():
+            value = interpret(node.value, symtab)
+            symtab.set(node.name, value)
+            return value
+        
         case _:
             raise ValueError(f"Unknown node type: {type(node)}")

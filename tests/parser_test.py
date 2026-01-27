@@ -182,7 +182,7 @@ def test_nested_function_calls():
 
 def test_parcer_equals():
     tokens = tokenize('x=2')
-    expected = ast.VariableDeclaration(L, 'x', ast.Literal(L, 2))
+    expected = ast.Assignment(L, ast.Identifier(L, 'x'), ast.Literal(L, 2))
     assert parse(tokens) == expected
 
 def test_parser_lt():
@@ -397,9 +397,9 @@ def test_assignment_with_consecutive_blocks_allowed():
     """x = { { f(a) } { b } } should be allowed"""
     tokens = tokenize('x = { { f(a) } { b } }')
     result = parse(tokens)
-    expected = ast.VariableDeclaration(
+    expected = ast.Assignment(
         L,
-        'x',
+        ast.Identifier(L, 'x'),
         ast.Block(
             L,
             statements=[
