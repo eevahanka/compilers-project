@@ -6,8 +6,13 @@ from compiler.types import Type, FunType
 from compiler.parser import parse
 import compiler.ast as ast
 import pytest
+from compiler.compiler import compile
 
 L = Location(1,1, True)
+
+def testtest():
+    c = compile('1 - 3')
+    assert c ==0
 
 def test_typecheck():
     tokens = tokenize("2+3")

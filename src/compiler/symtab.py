@@ -86,6 +86,14 @@ class SymTable(Generic[T]):
     def define(self, name: str, value: T) -> None:
         """Define a variable in the current scope."""
         self.symbols[name] = value
+
+    # Compatibility helpers expected by other modules
+    def add_local(self, name: str, value: T) -> None:
+        """Add a name to the current scope. Alias for `define`."""
+        self.define(name, value)
+
+    def require(self, name: str) -> T:
+        return self.lookup(name)
     
     def lookup(self, name: str) -> T:
         """Look up a variable, searching in current and parent scopes."""

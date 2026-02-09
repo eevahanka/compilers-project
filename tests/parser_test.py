@@ -37,8 +37,6 @@ def test_parcer_ifthenelse():
         then_branch=ast.BinaryOp(L, ast.Identifier(L, 'b'), '+', ast.Identifier(L, 'c')),
         else_branch=ast.BinaryOp(L, ast.Identifier(L, 'x'), '*', ast.Identifier(L, 'y'))
     )
-    print(expected)
-    print(parse(tokens))
     assert(parse(tokens) == expected)
 
 def test_parcer_ifthen():

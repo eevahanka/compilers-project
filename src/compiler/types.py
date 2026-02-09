@@ -9,3 +9,12 @@ class Type:
 class FunType:
     parameters: (Type)
     returntype: Type
+    
+    def __repr__(self) -> str:
+        return "Unit"
+
+
+# Primitive type singletons
+Bool = Type('Bool')
+Int = Type('Int')
+Unit = Type('Unit')

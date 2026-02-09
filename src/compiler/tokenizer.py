@@ -88,7 +88,6 @@ def tokenize(source_code: str) -> list[str]:
                     row += 1
             column = 1
             continue
-    print("got to the end, is this suppopsed yo happen??")
     i += 1
     return tokens
 
