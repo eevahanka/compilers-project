@@ -89,6 +89,26 @@ def generate_ir(
                     loc, var_op, [var_left, var_right], var_result))
                 return var_result
 
+            case ast.VariableDeclaration():
+                # Emit instructions to compute the value
+                var_value = visit(st, expr.value)
+                # Allocate a unique IR variable for this declared variable
+                var_local = new_var()
+                # Add the mapping to the symbol table
+                st.add_local(expr.name, var_local)
+                # Emit a Copy instruction to store the value
+                ins.append(ir.Copy(loc, var_value, var_local))
+                # Return the value
+                return var_value
+
+            case ast.Block():
+                # Create a new child scope for the block
+                child_st = st.create_child()
+                result_var = var_unit
+                for statement in expr.statements:
+                    result_var = visit(child_st, statement)
+                return result_var
+
             #... # Other AST node cases (see below)
 
     # We start with a SymTab that maps all available global names

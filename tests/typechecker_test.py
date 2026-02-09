@@ -11,7 +11,7 @@ from compiler.compiler import compile
 L = Location(1,1, True)
 
 def testtest():
-    c = compile('1 - 3')
+    c = compile('var x = 1 + 2 ')
     assert c ==0
 
 def test_typecheck():

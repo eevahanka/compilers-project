@@ -233,7 +233,9 @@ def parse(tokens: list[Token]) -> ast.Expression:
     def parse_assignment() -> ast.Expression:
         """Entry point for expression parsing."""
         return parse_binary_op_level(0)
-    parsed = parse_assignment()
+    
+    # Parse top-level: could be a statement (var decl) or an expression
+    parsed = parse_statement()
     if peek().type != 'end':
         raise Exception(f'{peek().location}: unexpected token "{peek().text}"')
     return parsed
